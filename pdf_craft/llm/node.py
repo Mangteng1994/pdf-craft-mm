@@ -16,22 +16,25 @@ from epub_generator.template import create_env
 
 from ..xml import decode_friendly, encode_friendly
 from .increasable import Increasable
+from .codex_cli import CodexCLIExecutor
 from .executor import LLMExecutor
 
 
 class LLM:
   def __init__(
       self,
-      key: str,
-      url: str,
-      model: str,
-      token_encoding: str,
+      key: str | None = None,
+      url: str | None = None,
+      model: str | None = None,
+      token_encoding: str = "o200k_base",
       timeout: float | None = None,
       top_p: float | tuple[float, float] | None = None,
       temperature: float | tuple[float, float] | None = None,
       retry_times: int = 5,
       retry_interval_seconds: float = 6.0,
       log_dir_path: PathLike | None = None,
+      mode: str = "api_key",
+      codex_cli_path: str | None = None,
     ):
 
     prompts_path = cast(Path, files("pdf_craft")) / "data"
@@ -47,17 +50,30 @@ class LLM:
       elif not self._logger_save_path.is_dir():
         self._logger_save_path = None
 
-    self._executor = LLMExecutor(
-      url=url,
-      model=model,
-      api_key=cast(SecretStr, key),
-      timeout=timeout,
-      top_p=Increasable(top_p),
-      temperature=Increasable(temperature),
-      retry_times=retry_times,
-      retry_interval_seconds=retry_interval_seconds,
-      create_logger=self._create_logger,
-    )
+    if mode == "codex_cli":
+      if not codex_cli_path:
+        raise ValueError("codex_cli_path is required when mode is codex_cli")
+      self._executor = CodexCLIExecutor(
+        cli_path=codex_cli_path,
+        timeout=timeout,
+        retry_times=retry_times,
+        retry_interval_seconds=retry_interval_seconds,
+        create_logger=self._create_logger,
+      )
+    else:
+      if not key or not url or not model:
+        raise ValueError("key, url and model are required when mode is api_key")
+      self._executor = LLMExecutor(
+        url=url,
+        model=model,
+        api_key=cast(SecretStr, key),
+        timeout=timeout,
+        top_p=Increasable(top_p),
+        temperature=Increasable(temperature),
+        retry_times=retry_times,
+        retry_interval_seconds=retry_interval_seconds,
+        create_logger=self._create_logger,
+      )
 
   def _create_logger(self) -> Logger | None:
     if self._logger_save_path is None:

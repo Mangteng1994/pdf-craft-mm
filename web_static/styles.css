@@ -155,6 +155,21 @@ select {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
+.mode-hint,
+.llm-mode-section {
+  grid-column: 1 / -1;
+}
+
+.mode-hint {
+  margin-top: -2px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 7px;
+  background: rgba(224, 237, 228, 0.65);
+  color: var(--muted);
+  font-size: 13px;
+}
+
 .job-grid {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   margin-top: 16px;

@@ -16,13 +16,22 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 from conversion_service import convert_pdf_to_epub, ensure_runtime_dirs, resolve_path, runtime_paths
-from llm_config import ENV_PATH, ROOT_DIR, _load_env_file
+from llm_config import (
+  ENV_PATH,
+  ROOT_DIR,
+  LLM_MODE_API_KEY,
+  _load_env_file,
+  find_codex_cli_path,
+  validate_codex_cli_path,
+)
 
 
 STATIC_DIR = ROOT_DIR / "web_static"
 
 CONFIG_KEYS = [
+  "PDF_CRAFT_LLM_MODE",
   "PDF_CRAFT_LLM_API_KEY",
+  "PDF_CRAFT_CODEX_CLI_PATH",
   "PDF_CRAFT_LLM_BASE_URL",
   "PDF_CRAFT_LLM_MODEL",
   "PDF_CRAFT_TOKEN_ENCODING",
@@ -46,7 +55,9 @@ CONFIG_KEYS = [
 ]
 
 DEFAULT_CONFIG = {
+  "PDF_CRAFT_LLM_MODE": LLM_MODE_API_KEY,
   "PDF_CRAFT_LLM_API_KEY": "",
+  "PDF_CRAFT_CODEX_CLI_PATH": "",
   "PDF_CRAFT_LLM_BASE_URL": "https://api.deepseek.com",
   "PDF_CRAFT_LLM_MODEL": "deepseek-chat",
   "PDF_CRAFT_TOKEN_ENCODING": "o200k_base",
@@ -168,7 +179,9 @@ def _write_env_values(values: dict[str, str]) -> None:
     final_values["PDF_CRAFT_LLM_API_KEY"] = current_key
 
   lines = [
+    "PDF_CRAFT_LLM_MODE={PDF_CRAFT_LLM_MODE}",
     "PDF_CRAFT_LLM_API_KEY={PDF_CRAFT_LLM_API_KEY}",
+    "PDF_CRAFT_CODEX_CLI_PATH={PDF_CRAFT_CODEX_CLI_PATH}",
     "PDF_CRAFT_LLM_BASE_URL={PDF_CRAFT_LLM_BASE_URL}",
     "PDF_CRAFT_LLM_MODEL={PDF_CRAFT_LLM_MODEL}",
     "PDF_CRAFT_TOKEN_ENCODING={PDF_CRAFT_TOKEN_ENCODING}",
@@ -306,11 +319,20 @@ def get_config() -> dict[str, Any]:
   values = _read_env_values()
   masked = dict(values)
   masked["PDF_CRAFT_LLM_API_KEY"] = _mask_key(values.get("PDF_CRAFT_LLM_API_KEY", ""))
+  codex_cli_path = values.get("PDF_CRAFT_CODEX_CLI_PATH", "").strip()
+  codex_cli_available = False
+  if codex_cli_path:
+    try:
+      validate_codex_cli_path(codex_cli_path)
+      codex_cli_available = True
+    except RuntimeError:
+      codex_cli_available = False
   paths = ensure_runtime_dirs()
   pdfs = sorted(path.name for path in paths.input_dir.glob("*.pdf"))
   return {
     "values": masked,
     "has_api_key": bool(values.get("PDF_CRAFT_LLM_API_KEY")),
+    "codex_cli_available": codex_cli_available,
     "pdfs": pdfs,
   }
 
@@ -320,6 +342,14 @@ def save_config(payload: ConfigUpdate) -> dict[str, Any]:
   _write_env_values(payload.values)
   ensure_runtime_dirs()
   return get_config()
+
+
+@app.post("/api/config/detect-codex-cli")
+def detect_codex_cli() -> dict[str, str]:
+  detected = find_codex_cli_path()
+  if detected is None:
+    raise HTTPException(status_code=404, detail="未检测到可用的 Codex CLI，请先在本机安装并确保命令可执行。")
+  return {"path": str(detected)}
 
 
 @app.post("/api/upload")
