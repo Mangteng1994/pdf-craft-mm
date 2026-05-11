@@ -35,6 +35,7 @@ class LLM:
       log_dir_path: PathLike | None = None,
       mode: str = "api_key",
       codex_cli_path: str | None = None,
+      codex_model_reasoning_effort: str | None = None,
     ):
 
     prompts_path = cast(Path, files("pdf_craft")) / "data"
@@ -55,6 +56,8 @@ class LLM:
         raise ValueError("codex_cli_path is required when mode is codex_cli")
       self._executor = CodexCLIExecutor(
         cli_path=codex_cli_path,
+        model=model,
+        reasoning_effort=codex_model_reasoning_effort,
         timeout=timeout,
         retry_times=retry_times,
         retry_interval_seconds=retry_interval_seconds,

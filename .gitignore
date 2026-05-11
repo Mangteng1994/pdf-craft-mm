@@ -143,6 +143,9 @@ celerybeat.pid
 # Environments
 .env
 .venv
+.venvs/
+.codex/
+/poetry
 env/
 venv/
 ENV/

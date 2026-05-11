@@ -14,6 +14,8 @@ ROOT_DIR = Path(__file__).resolve().parent
 ENV_PATH = ROOT_DIR / ".env"
 LLM_MODE_API_KEY = "api_key"
 LLM_MODE_CODEX_CLI = "codex_cli"
+CODEX_REASONING_EFFORTS = {"low", "medium", "high", "xhigh"}
+LEGACY_MODEL_KEY = "PDF_CRAFT_LLM_MODEL"
 
 
 def _load_env_file(path: Path = ENV_PATH) -> None:
@@ -54,6 +56,16 @@ def _get_float(name: str) -> float | None:
 def _get_int(name: str, default: int) -> int:
   value = _get(name)
   return default if value in (None, "") else int(value)
+
+
+def _get_model(name: str, default: str | None = None) -> str | None:
+  value = (_get(name, "") or "").strip()
+  if value:
+    return value
+  legacy = (_get(LEGACY_MODEL_KEY, "") or "").strip()
+  if legacy:
+    return legacy
+  return default
 
 
 def _codex_command_prefix(path: Path) -> list[str]:
@@ -161,7 +173,13 @@ def create_llm() -> "LLM":
   if mode == LLM_MODE_CODEX_CLI:
     cli_path = _get("PDF_CRAFT_CODEX_CLI_PATH", required=True)
     validated_cli_path = validate_codex_cli_path(cli_path)
+    reasoning_effort = (_get("PDF_CRAFT_CODEX_MODEL_REASONING_EFFORT", "") or "").strip().lower()
+    if reasoning_effort and reasoning_effort not in CODEX_REASONING_EFFORTS:
+      raise RuntimeError(
+        "PDF_CRAFT_CODEX_MODEL_REASONING_EFFORT must be one of: low, medium, high, xhigh"
+      )
     return LLM(
+      model=_get_model("PDF_CRAFT_CODEX_MODEL"),
       token_encoding=_get("PDF_CRAFT_TOKEN_ENCODING", "o200k_base") or "o200k_base",
       timeout=_get_float("PDF_CRAFT_LLM_TIMEOUT"),
       retry_times=_get_int("PDF_CRAFT_LLM_RETRY_TIMES", 5),
@@ -169,12 +187,13 @@ def create_llm() -> "LLM":
       log_dir_path=log_dir_path,
       mode=LLM_MODE_CODEX_CLI,
       codex_cli_path=str(validated_cli_path),
+      codex_model_reasoning_effort=reasoning_effort or None,
     )
 
   return LLM(
     key=_get("PDF_CRAFT_LLM_API_KEY", required=True),
     url=_get("PDF_CRAFT_LLM_BASE_URL", "https://api.deepseek.com"),
-    model=_get("PDF_CRAFT_LLM_MODEL", "deepseek-chat"),
+    model=_get_model("PDF_CRAFT_API_MODEL", "deepseek-chat"),
     token_encoding=_get("PDF_CRAFT_TOKEN_ENCODING", "o200k_base"),
     timeout=_get_float("PDF_CRAFT_LLM_TIMEOUT"),
     top_p=_get_float("PDF_CRAFT_LLM_TOP_P"),

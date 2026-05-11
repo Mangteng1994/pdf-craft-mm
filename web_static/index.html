@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>PDF Craft 本地转换</title>
     <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%232d7554'/%3E%3Cpath d='M10 7h8l5 5v13H10z' fill='%23fbfcf7'/%3E%3Cpath d='M18 7v6h5' fill='none' stroke='%232d7554' stroke-width='2'/%3E%3Cpath d='M13 18h7M13 22h5' stroke='%232d7554' stroke-width='2'/%3E%3C/svg%3E">
-    <link rel="stylesheet" href="/static/styles.css?v=20260508-3">
+    <link rel="stylesheet" href="/static/styles.css?v=20260511-1">
   </head>
   <body>
     <header class="topbar">
@@ -26,135 +26,190 @@
           <button type="button" id="saveConfigButton">保存配置</button>
         </div>
 
-        <form id="configForm" class="config-grid">
-          <label>
-            <span>LLM 接入方式</span>
-            <select id="llmModeSelect" name="PDF_CRAFT_LLM_MODE">
-              <option value="api_key">API Key</option>
-              <option value="codex_cli">本地 Codex CLI</option>
-            </select>
-          </label>
-          <div class="mode-hint" id="llmModeHint">API Key 模式会通过远程 LLM 服务执行请求。</div>
-          <div class="llm-mode-section llm-mode-section-api" data-llm-mode="api_key">
-          <label>
-            <span>API Key</span>
-            <div class="input-with-action">
-              <input id="apiKeyInput" name="PDF_CRAFT_LLM_API_KEY" type="password" autocomplete="off" placeholder="留空则保留现有 Key">
-              <button type="button" id="toggleApiKeyButton" class="inline-button">显示</button>
-            </div>
-          </label>
+        <form id="configForm" class="config-shell">
+          <div class="config-tabs" role="tablist" aria-label="配置标签">
+            <button type="button" class="config-tab" data-config-tab="access" data-selected="true">接入方式</button>
+            <button type="button" class="config-tab" data-config-tab="runtime" data-selected="false">运行环境</button>
+            <button type="button" class="config-tab" data-config-tab="quality" data-selected="false">转换质量</button>
+            <button type="button" class="config-tab" data-config-tab="advanced" data-selected="false">高级参数</button>
           </div>
-          <div class="llm-mode-section llm-mode-section-codex" data-llm-mode="codex_cli">
-            <label>
-              <span>Codex CLI 路径</span>
-              <div class="input-with-action">
-                <input id="codexCliPathInput" name="PDF_CRAFT_CODEX_CLI_PATH" type="text" placeholder="点击“自动探测”填充本机可用路径">
-                <button type="button" id="detectCodexCliButton" class="inline-button">自动探测</button>
+
+          <section class="config-section" data-config-panel="access">
+            <div class="config-grid">
+              <div class="config-group-title">接入模式</div>
+              <label>
+                <span>LLM 接入方式</span>
+                <select id="llmModeSelect" name="PDF_CRAFT_LLM_MODE">
+                  <option value="api_key">API Key</option>
+                  <option value="codex_cli">本地 Codex CLI</option>
+                </select>
+              </label>
+              <div class="mode-hint" id="llmModeHint">API Key 模式会通过远程 LLM 服务执行请求。</div>
+
+              <div class="llm-mode-section llm-mode-section-api" data-llm-mode="api_key">
+                <label>
+                  <span>API Key</span>
+                  <div class="input-with-action">
+                    <input id="apiKeyInput" name="PDF_CRAFT_LLM_API_KEY" type="password" autocomplete="off" placeholder="留空则保留现有 Key">
+                    <button type="button" id="toggleApiKeyButton" class="inline-button">显示</button>
+                  </div>
+                </label>
               </div>
-            </label>
-          </div>
-          <div class="llm-mode-section llm-mode-section-api" data-llm-mode="api_key">
-          <label>
-            <span>服务地址</span>
-            <input name="PDF_CRAFT_LLM_BASE_URL" type="text">
-          </label>
-          </div>
-          <div class="llm-mode-section llm-mode-section-api" data-llm-mode="api_key">
-          <label>
-            <span>模型</span>
-            <input name="PDF_CRAFT_LLM_MODEL" type="text">
-          </label>
-          </div>
-          <div class="llm-mode-section llm-mode-section-api" data-llm-mode="api_key">
-            <label>
-              <span>Token 编码</span>
-              <input name="PDF_CRAFT_TOKEN_ENCODING" type="text">
-            </label>
-          </div>
-          <label>
-            <span>代理地址</span>
-            <input name="PDF_CRAFT_PROXY_URL" type="text" placeholder="http://127.0.0.1:7890">
-          </label>
-          <label>
-            <span>源 PDF 目录</span>
-            <input name="PDF_CRAFT_INPUT_DIR" type="text">
-          </label>
-          <label>
-            <span>工作目录</span>
-            <input name="PDF_CRAFT_WORK_DIR" type="text">
-          </label>
-          <label>
-            <span>输出目录</span>
-            <input name="PDF_CRAFT_DIST_DIR" type="text">
-          </label>
-          <label>
-            <span>本地模型目录</span>
-            <input name="PDF_CRAFT_MODEL_DIR" type="text">
-          </label>
-          <label>
-            <span>设备</span>
-            <select name="PDF_CRAFT_DEVICE">
-              <option value="cpu">CPU</option>
-              <option value="cuda">CUDA</option>
-            </select>
-          </label>
-          <label>
-            <span>公式识别</span>
-            <select name="PDF_CRAFT_EXTRACT_FORMULA">
-              <option value="false">关闭</option>
-              <option value="true">开启</option>
-            </select>
-          </label>
-          <label>
-            <span>表格识别</span>
-            <select name="PDF_CRAFT_EXTRACT_TABLE_FORMAT">
-              <option value="disable">关闭</option>
-              <option value="html">HTML</option>
-              <option value="markdown">Markdown</option>
-              <option value="latex">LaTeX</option>
-              <option value="auto">自动</option>
-            </select>
-          </label>
-          <label>
-            <span>勘误模式</span>
-            <select name="PDF_CRAFT_CORRECTION_MODE">
-              <option value="no">关闭</option>
-              <option value="once">一次</option>
-              <option value="detailed">详细</option>
-            </select>
-          </label>
-          <label>
-            <span>线程数</span>
-            <input name="PDF_CRAFT_THREADS_COUNT" type="number" min="1" step="1">
-          </label>
-          <label>
-            <span>窗口 Token</span>
-            <input name="PDF_CRAFT_WINDOW_TOKENS" type="number" min="1" step="1" placeholder="留空使用默认值">
-          </label>
-          <label>
-            <span>超时秒数</span>
-            <input name="PDF_CRAFT_LLM_TIMEOUT" type="number" min="1" step="1">
-          </label>
-          <label>
-            <span>重试次数</span>
-            <input name="PDF_CRAFT_LLM_RETRY_TIMES" type="number" min="0" step="1">
-          </label>
-          <label>
-            <span>重试间隔</span>
-            <input name="PDF_CRAFT_LLM_RETRY_INTERVAL_SECONDS" type="number" min="0" step="0.5">
-          </label>
-          <label>
-            <span>Top P</span>
-            <input name="PDF_CRAFT_LLM_TOP_P" type="number" min="0" max="1" step="0.1">
-          </label>
-          <label>
-            <span>温度</span>
-            <input name="PDF_CRAFT_LLM_TEMPERATURE" type="number" min="0" max="2" step="0.1">
-          </label>
-          <label>
-            <span>日志目录</span>
-            <input name="PDF_CRAFT_LLM_LOG_DIR" type="text">
-          </label>
+              <div class="llm-mode-section llm-mode-section-api" data-llm-mode="api_key">
+                <label>
+                  <span>服务地址</span>
+                  <input name="PDF_CRAFT_LLM_BASE_URL" type="text">
+                </label>
+              </div>
+              <div class="llm-mode-section llm-mode-section-api" data-llm-mode="api_key">
+                <label>
+                  <span>模型</span>
+                  <input name="PDF_CRAFT_API_MODEL" type="text">
+                </label>
+              </div>
+              <div class="llm-mode-section llm-mode-section-api" data-llm-mode="api_key">
+                <label>
+                  <span>Token 编码</span>
+                  <input name="PDF_CRAFT_TOKEN_ENCODING" type="text">
+                </label>
+              </div>
+
+              <div class="llm-mode-section llm-mode-section-codex" data-llm-mode="codex_cli">
+                <label>
+                  <span>Codex CLI 路径</span>
+                  <div class="input-with-action">
+                    <input id="codexCliPathInput" name="PDF_CRAFT_CODEX_CLI_PATH" type="text" placeholder="点击自动探测填入本机可用路径">
+                    <button type="button" id="detectCodexCliButton" class="inline-button">自动探测</button>
+                  </div>
+                </label>
+              </div>
+              <div class="llm-mode-section llm-mode-section-codex" data-llm-mode="codex_cli">
+                <label>
+                  <span>Codex Model</span>
+                  <select id="codexModelSelect" name="PDF_CRAFT_CODEX_MODEL">
+                    <option value="">Use Codex default model</option>
+                  </select>
+                </label>
+              </div>
+              <div class="llm-mode-section llm-mode-section-codex" data-llm-mode="codex_cli">
+                <label>
+                  <span>Reasoning Effort</span>
+                  <select name="PDF_CRAFT_CODEX_MODEL_REASONING_EFFORT">
+                    <option value="">Use Codex config default</option>
+                    <option value="low">low</option>
+                    <option value="medium">medium</option>
+                    <option value="high">high</option>
+                    <option value="xhigh">xhigh</option>
+                  </select>
+                </label>
+              </div>
+
+              <label>
+                <span>代理地址</span>
+                <input name="PDF_CRAFT_PROXY_URL" type="text" placeholder="http://127.0.0.1:7890">
+              </label>
+            </div>
+          </section>
+
+          <section class="config-section" data-config-panel="runtime" hidden>
+            <div class="config-grid">
+              <div class="config-group-title">目录与设备</div>
+              <label>
+                <span>源 PDF 目录</span>
+                <input name="PDF_CRAFT_INPUT_DIR" type="text">
+              </label>
+              <label>
+                <span>工作目录</span>
+                <input name="PDF_CRAFT_WORK_DIR" type="text">
+              </label>
+              <label>
+                <span>输出目录</span>
+                <input name="PDF_CRAFT_DIST_DIR" type="text">
+              </label>
+              <label>
+                <span>本地模型目录</span>
+                <input name="PDF_CRAFT_MODEL_DIR" type="text">
+              </label>
+              <label>
+                <span>设备</span>
+                <select name="PDF_CRAFT_DEVICE">
+                  <option value="cpu">CPU</option>
+                  <option value="cuda">CUDA</option>
+                </select>
+              </label>
+            </div>
+          </section>
+
+          <section class="config-section" data-config-panel="quality" hidden>
+            <div class="config-grid">
+              <div class="config-group-title">识别与纠错</div>
+              <label>
+                <span>公式识别</span>
+                <select name="PDF_CRAFT_EXTRACT_FORMULA">
+                  <option value="false">关闭</option>
+                  <option value="true">开启</option>
+                </select>
+              </label>
+              <div class="field-hint">开启后会尝试公式提取和 LaTeX 渲染，未安装 LaTeX 时相关能力会退化。</div>
+              <label>
+                <span>表格识别</span>
+                <select name="PDF_CRAFT_EXTRACT_TABLE_FORMAT">
+                  <option value="disable">关闭</option>
+                  <option value="html">HTML</option>
+                  <option value="markdown">Markdown</option>
+                  <option value="latex">LaTeX</option>
+                  <option value="auto">自动</option>
+                </select>
+              </label>
+              <div class="field-hint">复杂表格通常更依赖 CUDA，CPU 下更容易回退或失败。</div>
+              <label>
+                <span>纠错模式</span>
+                <select name="PDF_CRAFT_CORRECTION_MODE">
+                  <option value="no">关闭</option>
+                  <option value="once">一次</option>
+                  <option value="detailed">详细</option>
+                </select>
+              </label>
+            </div>
+          </section>
+
+          <section class="config-section" data-config-panel="advanced" hidden>
+            <div class="config-grid">
+              <div class="config-group-title">请求与重试</div>
+              <label>
+                <span>线程数</span>
+                <input name="PDF_CRAFT_THREADS_COUNT" type="number" min="1" step="1">
+              </label>
+              <label>
+                <span>窗口 Token</span>
+                <input name="PDF_CRAFT_WINDOW_TOKENS" type="number" min="1" step="1" placeholder="留空使用默认值">
+              </label>
+              <label>
+                <span>超时秒数</span>
+                <input name="PDF_CRAFT_LLM_TIMEOUT" type="number" min="1" step="1">
+              </label>
+              <label>
+                <span>重试次数</span>
+                <input name="PDF_CRAFT_LLM_RETRY_TIMES" type="number" min="0" step="1">
+              </label>
+              <label>
+                <span>重试间隔</span>
+                <input name="PDF_CRAFT_LLM_RETRY_INTERVAL_SECONDS" type="number" min="0" step="0.5">
+              </label>
+              <label>
+                <span>Top P</span>
+                <input name="PDF_CRAFT_LLM_TOP_P" type="number" min="0" max="1" step="0.1">
+              </label>
+              <label>
+                <span>温度</span>
+                <input name="PDF_CRAFT_LLM_TEMPERATURE" type="number" min="0" max="2" step="0.1">
+              </label>
+              <label>
+                <span>日志目录</span>
+                <input name="PDF_CRAFT_LLM_LOG_DIR" type="text">
+              </label>
+            </div>
+          </section>
         </form>
       </section>
 
@@ -162,6 +217,38 @@
         <div class="section-heading">
           <h2 id="runTitle">转换任务</h2>
           <span id="apiKeyState" class="meta-text"></span>
+        </div>
+
+        <div class="preflight-panel" aria-labelledby="preflightTitle">
+          <div class="section-heading compact-heading">
+            <div>
+              <h2 id="preflightTitle">转换前预检</h2>
+              <span id="preflightSummary" class="meta-text">等待检查</span>
+            </div>
+            <button type="button" id="runPreflightButton">重新检查</button>
+          </div>
+
+          <div class="preflight-overview">
+            <div class="runtime-snapshot-card">
+              <span class="eyebrow">当前运行环境</span>
+              <strong id="runtimeSnapshotTitle">等待检查</strong>
+              <span id="runtimeSnapshot" class="meta-text">等待读取当前服务环境</span>
+            </div>
+            <div id="preflightSummaryCards" class="summary-cards" aria-label="预检摘要"></div>
+          </div>
+
+          <div class="guide-section" aria-labelledby="guideTitle">
+            <div class="section-heading compact-heading">
+              <div>
+                <h3 id="guideTitle">环境安装引导</h3>
+                <span class="meta-text">只显示当前最相关的一类环境说明和命令</span>
+              </div>
+            </div>
+            <div id="guideTabs" class="guide-tabs" role="tablist" aria-label="环境安装标签"></div>
+            <div id="guideDetail" class="guide-detail" aria-live="polite"></div>
+          </div>
+
+          <div id="preflightList" class="preflight-list" aria-label="转换前预检结果"></div>
         </div>
 
         <div class="upload-row">
@@ -182,26 +269,49 @@
 
         <div class="actions">
           <button type="button" id="startJobButton" class="primary">开始转换</button>
-          <button type="button" id="deleteJobButton" class="danger">删除任务</button>
+          <button type="button" id="pauseJobButton">暂停</button>
+          <button type="button" id="resumeJobButton">继续</button>
+          <button type="button" id="cancelJobButton">取消</button>
+          <button type="button" id="retryJobButton">重试</button>
+          <button type="button" id="deleteJobButton" class="danger">删除任务与文件</button>
           <a id="downloadLink" class="download-link" href="#" hidden>下载 EPUB</a>
         </div>
 
-        <div class="progress-area">
-          <div class="progress-head">
-            <strong id="jobStatus">空闲</strong>
-            <span id="jobStep">等待任务</span>
-          </div>
-          <div class="progress-track">
-            <div id="progressBar" class="progress-bar"></div>
-          </div>
-          <div id="progressText" class="meta-text">0 / 0</div>
-        </div>
+        <div class="run-grid">
+          <div class="primary-column">
+            <div class="progress-area">
+              <div class="progress-head">
+                <strong id="jobStatus">空闲</strong>
+                <span id="jobStep">等待任务</span>
+              </div>
+              <div class="progress-track">
+                <div id="progressBar" class="progress-bar"></div>
+              </div>
+              <div id="progressText" class="meta-text">0 / 0</div>
+            </div>
 
-        <pre id="logOutput" class="logs" aria-label="任务日志"></pre>
+            <div class="logs-panel">
+              <div class="section-heading compact-heading">
+                <h2>任务日志</h2>
+              </div>
+              <pre id="logOutput" class="logs" aria-label="任务日志"></pre>
+            </div>
+          </div>
+
+          <div class="history-panel">
+            <div class="history-section">
+              <div class="section-heading compact-heading">
+                <h2>历史任务</h2>
+                <button type="button" id="refreshJobsButton">刷新</button>
+              </div>
+              <div id="jobList" class="job-list" aria-label="历史任务"></div>
+            </div>
+          </div>
+        </div>
       </section>
     </main>
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
-    <script src="/static/app.js?v=20260508-3"></script>
+    <script src="/static/app.js?v=20260511-1"></script>
   </body>
 </html>
