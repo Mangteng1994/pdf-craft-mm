@@ -30,17 +30,39 @@ PDF Craft 可以将 PDF 文件转化为各种其他格式。该项目将专注�
 
 这个仓库也包含一个基于 FastAPI 的本地 Web 应用，提供浏览器界面用于上传 PDF、调整运行配置，并在本地导出 EPUB。
 
-请使用 Python 3.10 到 3.12，并通过 Poetry 安装依赖：
+请使用 Python 3.10 到 3.12。仓库现在支持在 `.venvs/` 下创建两套彼此独立的运行环境：
 
 ```shell
-poetry install
+python scripts/runtime_env.py create cpu
+python scripts/runtime_env.py create gpu
 ```
 
-然后在项目根目录启动本地服务：
+这些辅助命令会复用 `pyproject.toml` 里已经声明好的 extras，但通过 `pip` 安装到各自独立的虚拟环境中，因此只为了运行本地应用时不强依赖 Poetry。如果你需要完整的贡献者工具链，仍然可以单独执行 `poetry install`。
+
+执行后会得到：
 
 ```shell
-poetry run uvicorn web_app:app --host 127.0.0.1 --port 8000 --reload
+.venvs/cpu
+.venvs/gpu
 ```
+
+这两套环境是刻意分开的：
+
+- CPU 环境只安装 `onnxruntime`
+- GPU 环境只安装 `onnxruntime-gpu`
+- 切换 CPU/GPU 时不会互相污染
+
+在项目根目录按需启动本地服务：
+
+```shell
+python scripts/runtime_env.py run-web cpu --reload
+python scripts/runtime_env.py run-web gpu --reload
+```
+
+这个辅助脚本会自动设置：
+
+- CPU 环境：`PDF_CRAFT_DEVICE=cpu`
+- GPU 环境：`PDF_CRAFT_DEVICE=cuda`
 
 启动后，在浏览器中打开：
 
@@ -49,6 +71,71 @@ http://127.0.0.1:8000
 ```
 
 在执行 PDF 转 EPUB 之前，请先将 `.env.example` 复制为 `.env`，并设置 `PDF_CRAFT_LLM_API_KEY`。其他运行目录和 OCR 相关选项也可以在 `.env` 或 Web 界面中配置。
+
+如果你更希望手动激活环境，而不是使用 `run-web`：
+
+```shell
+# Windows PowerShell
+.venvs\cpu\Scripts\Activate.ps1
+.venvs\gpu\Scripts\Activate.ps1
+
+# macOS / Linux
+source .venvs/cpu/bin/activate
+source .venvs/gpu/bin/activate
+```
+
+然后手动启动服务：
+
+```shell
+# Windows PowerShell
+$env:PDF_CRAFT_DEVICE="cpu"
+python -m uvicorn web_app:app --host 127.0.0.1 --port 8000 --reload
+```
+
+或者：
+
+```shell
+# Windows PowerShell
+$env:PDF_CRAFT_DEVICE="cuda"
+python -m uvicorn web_app:app --host 127.0.0.1 --port 8000 --reload
+```
+
+或者：
+
+```shell
+# macOS / Linux
+export PDF_CRAFT_DEVICE=cpu
+python -m uvicorn web_app:app --host 127.0.0.1 --port 8000 --reload
+```
+
+或者：
+
+```shell
+# macOS / Linux
+export PDF_CRAFT_DEVICE=cuda
+python -m uvicorn web_app:app --host 127.0.0.1 --port 8000 --reload
+```
+
+要验证某个环境当前使用的 onnxruntime 包和 provider，可执行：
+
+```shell
+python scripts/runtime_env.py check cpu
+python scripts/runtime_env.py check gpu
+```
+
+这个检查命令会输出：
+
+- 是否安装了 `onnxruntime`
+- 是否安装了 `onnxruntime-gpu`
+- `onnxruntime` 报告的可用 execution providers
+- 该环境期望使用的设备
+
+如果你只想查看某个环境对应的 Python 路径：
+
+```shell
+python scripts/runtime_env.py python-path cpu
+python scripts/runtime_env.py python-path gpu
+```
 
 ### 使用 OOMOL Studio 运行
 
@@ -71,6 +158,8 @@ pip install pdf-craft[cpu]
 ```shell
 pip install pdf-craft[cuda]
 ```
+
+如果你是在 clone 下来的仓库里直接运行项目，而不是通过 PyPI 安装，优先建议使用 `scripts/runtime_env.py` 创建 `.venvs/cpu` 和 `.venvs/gpu`。这样更容易复现，也能避免把 `onnxruntime` 和 `onnxruntime-gpu` 混装到同一个环境里。
 
 ## 功能
 

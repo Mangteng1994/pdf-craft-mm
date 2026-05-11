@@ -132,19 +132,23 @@ def correction_mode():
 def convert_pdf_to_epub(
     pdf_path: str | Path,
     output_filename: str | None = None,
+    paths: RuntimePaths | None = None,
+    analysing_dir: str | Path | None = None,
+    output_dir: str | Path | None = None,
+    epub_path: str | Path | None = None,
     log: LogCallback | None = None,
     report_step: StepCallback | None = None,
     report_progress: ProgressCallback | None = None,
   ) -> ConversionResult:
   _load_env_file()
-  paths = ensure_runtime_dirs()
+  paths = ensure_runtime_dirs(paths)
   pdf_path = resolve_path(pdf_path)
   if not pdf_path.exists():
     raise FileNotFoundError(f"Source PDF not found: {pdf_path}")
 
-  output_dir = paths.work_dir / "output" / pdf_path.stem
-  analysing_dir = paths.work_dir / "analysing" / pdf_path.stem
-  epub_path = paths.dist_dir / output_name(pdf_path, output_filename)
+  output_dir = Path(output_dir) if output_dir is not None else paths.work_dir / "output" / pdf_path.stem
+  analysing_dir = Path(analysing_dir) if analysing_dir is not None else paths.work_dir / "analysing" / pdf_path.stem
+  epub_path = Path(epub_path) if epub_path is not None else paths.dist_dir / output_name(pdf_path, output_filename)
   window_tokens_raw = env("PDF_CRAFT_WINDOW_TOKENS", "")
   window_tokens = None if window_tokens_raw == "" else int(window_tokens_raw)
 

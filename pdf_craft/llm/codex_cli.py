@@ -19,12 +19,16 @@ class CodexCLIExecutor:
   def __init__(
       self,
       cli_path: str,
+      model: str | None,
+      reasoning_effort: str | None,
       timeout: float | None,
       retry_times: int,
       retry_interval_seconds: float,
       create_logger: Callable[[], Logger | None],
     ) -> None:
     self._cli_path = Path(cli_path)
+    self._model = model.strip() if model else None
+    self._reasoning_effort = reasoning_effort.strip().lower() if reasoning_effort else None
     self._timeout = timeout
     self._retry_times = retry_times
     self._retry_interval_seconds = retry_interval_seconds
@@ -88,8 +92,12 @@ class CodexCLIExecutor:
         str(ROOT_DIR),
         "--output-last-message",
         str(output_path),
-        "-",
       ]
+      if self._model:
+        command.extend(["--model", self._model])
+      if self._reasoning_effort:
+        command.extend(["--config", f'model_reasoning_effort="{self._reasoning_effort}"'])
+      command.append("-")
       completed = subprocess.run(
         command,
         input=self._wrap_prompt(prompt, parser_name),

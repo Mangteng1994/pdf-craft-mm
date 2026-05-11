@@ -30,17 +30,36 @@ You can call PDF Craft directly as a library, or use [OOMOL Studio](https://oomo
 
 This repository also includes a local web app built with FastAPI. It provides a browser UI for uploading PDF files, editing runtime configuration, and exporting EPUB files locally.
 
-Use Python 3.10 to 3.12 and install dependencies with Poetry:
+Use Python 3.10 to 3.12. The repository now supports two isolated runtime environments under `.venvs/`:
 
 ```shell
-poetry install
+python scripts/runtime_env.py create cpu
+python scripts/runtime_env.py create gpu
 ```
 
-Then start the local server from the project root:
+These helper commands use the same extras declared in `pyproject.toml`, but install them into dedicated virtual environments with `pip`, so Poetry is not required just to run the local app. If you need the full contributor toolchain, you can still run `poetry install` separately.
+
+This creates two independent virtual environments:
 
 ```shell
-poetry run uvicorn web_app:app --host 127.0.0.1 --port 8000 --reload
+.venvs/cpu
+.venvs/gpu
 ```
+
+They are intentionally separated so that:
+
+- the CPU environment installs `onnxruntime` only
+- the GPU environment installs `onnxruntime-gpu` only
+- switching between CPU and GPU does not mutate the other environment
+
+Start the local server from the project root with the selected runtime:
+
+```shell
+python scripts/runtime_env.py run-web cpu --reload
+python scripts/runtime_env.py run-web gpu --reload
+```
+
+The helper sets `PDF_CRAFT_DEVICE=cpu` for the CPU environment and `PDF_CRAFT_DEVICE=cuda` for the GPU environment automatically.
 
 Open the app in your browser:
 
@@ -49,6 +68,71 @@ http://127.0.0.1:8000
 ```
 
 Before converting PDF to EPUB, copy `.env.example` to `.env` and set `PDF_CRAFT_LLM_API_KEY`. Other runtime directories and OCR options can also be configured in `.env` or in the web UI.
+
+If you prefer to activate the environment manually instead of using `run-web`:
+
+```shell
+# Windows PowerShell
+.venvs\cpu\Scripts\Activate.ps1
+.venvs\gpu\Scripts\Activate.ps1
+
+# macOS / Linux
+source .venvs/cpu/bin/activate
+source .venvs/gpu/bin/activate
+```
+
+Then start the server manually:
+
+```shell
+# Windows PowerShell
+$env:PDF_CRAFT_DEVICE="cpu"
+python -m uvicorn web_app:app --host 127.0.0.1 --port 8000 --reload
+```
+
+or:
+
+```shell
+# Windows PowerShell
+$env:PDF_CRAFT_DEVICE="cuda"
+python -m uvicorn web_app:app --host 127.0.0.1 --port 8000 --reload
+```
+
+or:
+
+```shell
+# macOS / Linux
+export PDF_CRAFT_DEVICE=cpu
+python -m uvicorn web_app:app --host 127.0.0.1 --port 8000 --reload
+```
+
+or:
+
+```shell
+# macOS / Linux
+export PDF_CRAFT_DEVICE=cuda
+python -m uvicorn web_app:app --host 127.0.0.1 --port 8000 --reload
+```
+
+To verify which onnxruntime package/providers are active in a given environment:
+
+```shell
+python scripts/runtime_env.py check cpu
+python scripts/runtime_env.py check gpu
+```
+
+The check command prints:
+
+- whether `onnxruntime` is installed
+- whether `onnxruntime-gpu` is installed
+- the available execution providers reported by `onnxruntime`
+- the expected device for that environment
+
+If you want to know the exact Python executable for one environment:
+
+```shell
+python scripts/runtime_env.py python-path cpu
+python scripts/runtime_env.py python-path gpu
+```
 
 ### Run with OOMOL Studio
 
@@ -71,6 +155,8 @@ In addition, you need to replace the installation command mentioned above with t
 ```shell
 pip install pdf-craft[cuda]
 ```
+
+When using the repository itself rather than PyPI, prefer the isolated `.venvs/cpu` and `.venvs/gpu` environments created by `scripts/runtime_env.py`. They are easier to reproduce after `git clone`, and they avoid mixing `onnxruntime` and `onnxruntime-gpu` in one environment.
 
 ## Function
 
