@@ -233,8 +233,10 @@ class FragmentRequest:
         for line in headline:
           if line.tag != "line":
             continue
-          line_id = line.get("id", "-1")
-          lines.append((int(line_id), line.text))
+          line_id = _parse_line_id(line.get("id"))
+          if line_id < 0:
+            continue
+          lines.append((line_id, line.text))
         yield index, headline_id, lines
 
 def _to_abc_id(id: int) -> str:
@@ -262,3 +264,18 @@ def _parse_int(raw: str | None, default: int = -1) -> int:
     return int(raw)
   except ValueError:
     return default
+
+def _parse_line_id(raw: str | None) -> int:
+  """
+  Parse line id from model response.
+  The model may occasionally emit composite ids like "38/6".
+  In that case, use the first segment as the original line id.
+  """
+  if raw is None:
+    return -1
+  raw = raw.strip()
+  if not raw:
+    return -1
+  if "/" in raw:
+    raw = raw.split("/", 1)[0].strip()
+  return _parse_int(raw, default=-1)

@@ -134,6 +134,35 @@ python scripts/runtime_env.py python-path cpu
 python scripts/runtime_env.py python-path gpu
 ```
 
+### Windows double-click launcher
+
+If you do not want to type the startup command every time, build a lightweight Windows launcher exe:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\build_windows_launcher.ps1
+```
+
+The output is:
+
+```text
+dist\PDFCraftLauncher.exe
+```
+
+Put the exe in the project root, or double-click it from the `dist` directory. The launcher finds the project, starts the local web server, and opens:
+
+```text
+http://127.0.0.1:8000
+```
+
+By default, the launcher reads `PDF_CRAFT_DEVICE` from `.env`: `cuda` uses the GPU environment, and other values use the CPU environment. If the matching `.venvs/cpu` or `.venvs/gpu` does not exist, the launcher tries to create it with a local Python 3.10 to 3.12 installation. To force the GPU environment temporarily, set:
+
+```powershell
+$env:PDF_CRAFT_LAUNCHER_FLAVOR="gpu"
+.\dist\PDFCraftLauncher.exe
+```
+
+This exe is a launcher, not a fully offline installer. Large OCR and ONNX dependencies still live in `.venvs/cpu` or `.venvs/gpu`, which keeps the exe small and reuses the existing isolated runtime environments.
+
 ### Run with OOMOL Studio
 
 OOMOL uses container technology to package the dependencies required by PDF craft directly, and it can be used out of the box.

@@ -137,6 +137,35 @@ python scripts/runtime_env.py python-path cpu
 python scripts/runtime_env.py python-path gpu
 ```
 
+### Windows 双击启动器
+
+如果你不想每次手动输入启动命令，可以在 Windows 上生成一个轻量 exe 启动器：
+
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\build_windows_launcher.ps1
+```
+
+生成后会得到：
+
+```text
+dist\PDFCraftLauncher.exe
+```
+
+把这个 exe 放在项目根目录，或直接从 `dist` 目录双击运行。启动器会自动查找当前项目，启动本地 Web 服务，并打开：
+
+```text
+http://127.0.0.1:8000
+```
+
+启动器默认会读取 `.env` 里的 `PDF_CRAFT_DEVICE`：值为 `cuda` 时使用 GPU 环境，否则使用 CPU 环境。如果对应的 `.venvs/cpu` 或 `.venvs/gpu` 不存在，启动器会尝试用本机 Python 3.10 到 3.12 自动创建它。若要临时指定 GPU，可在 PowerShell 中设置：
+
+```powershell
+$env:PDF_CRAFT_LAUNCHER_FLAVOR="gpu"
+.\dist\PDFCraftLauncher.exe
+```
+
+这个 exe 是“启动器”，不是完整离线安装包；OCR、ONNX 等大依赖仍安装在 `.venvs/cpu` 或 `.venvs/gpu` 中。这样体积更小，也更容易复用现有 CPU/GPU 隔离环境。
+
 ### 使用 OOMOL Studio 运行
 
 OOMOL 使用容器技术将 PDF craft 所需的依赖直接打包，开箱即用。
